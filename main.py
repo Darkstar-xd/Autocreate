@@ -146,17 +146,34 @@ def test_proxy_helper(proxy):
         return False
 
 def load_proxies():
+    proxies = []
     with open('proxies.txt', 'r') as file:
-        proxies = []
         for line in file:
-            proxy = line.strip()
-            ip = proxy.split(':')[0]
+            proxy_line = line.strip()
+            if not proxy_line:
+                continue
+            if proxy_line.startswith("http://") or proxy_line.startswith("https://"):
+                proxy_type = "http"
+                raw = proxy_line
+            elif proxy_line.startswith("socks5://"):
+                proxy_type = "socks5"
+                raw = proxy_line
+            else:
+                # Guess based on port
+                parts = proxy_line.split(":")
+                if len(parts) == 2 and parts[1] == "1080":
+                    proxy_type = "socks5"
+                else:
+                    proxy_type = "http"
+                raw = f"{proxy_type}://{proxy_line}"
+
+            ip = proxy_line.split(':')[0]
             if is_valid_ip(ip):
                 proxies.append({
-                    'http': f'socks5://{proxy}',
-                    'https': f'socks5://{proxy}'
+                    'http': raw,
+                    'https': raw
                 })
-        return proxies
+    return proxies
 
 def get_working_proxies():
     proxies = load_proxies()
